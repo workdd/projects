@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>내가 올린 것들</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%97%82%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#eceef1; --surface:#f7f8fa; --raised:#fff; --line:#d3d8de; --line-soft:#e4e8ec;
+  --ink:#12151a; --ink2:#59636f; --ink3:#8a949f;
+  --accent:#1d4ed8; --accent-soft:#dce4fb;
+  --live:#0f7a3d; --live-soft:#d3ead9; --dirty:#a3620a; --dirty-soft:#f0e3cd; --ship:#6b3fa0; --ship-soft:#e6dcf5;
+  --shadow:0 1px 2px rgba(18,21,26,.05), 0 4px 14px rgba(18,21,26,.06);
+  --sans:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1014; --surface:#14181e; --raised:#1c222a; --line:#262d36; --line-soft:#1f252d;
+  --ink:#e7ebf0; --ink2:#99a4b1; --ink3:#6b7682;
+  --accent:#6b9bff; --accent-soft:#1b2a4a;
+  --live:#45c97a; --live-soft:#14301f; --dirty:#e0a54a; --dirty-soft:#33270f; --ship:#b592e8; --ship-soft:#2a1f3d;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1014; --surface:#14181e; --raised:#1c222a; --line:#262d36; --line-soft:#1f252d;
+  --ink:#e7ebf0; --ink2:#99a4b1; --ink3:#6b7682;
+  --accent:#6b9bff; --accent-soft:#1b2a4a;
+  --live:#45c97a; --live-soft:#14301f; --dirty:#e0a54a; --dirty-soft:#33270f; --ship:#b592e8; --ship-soft:#2a1f3d;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+  font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased}
+.wrap{max-width:1060px; margin:0 auto; padding-inline:20px; padding-block:32px 60px}
+.mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+
+h1{margin:0; font-size:26px; font-weight:700; letter-spacing:-.02em}
+.sub{margin:5px 0 0; color:var(--ink3); font-family:var(--mono); font-size:11.5px}
+
+/* 요약 — 상태별 집계 */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:9px; margin-top:22px}
+.tile{padding:11px 13px; border:1px solid var(--line); border-radius:9px; background:var(--surface)}
+.tile b{display:block; font-family:var(--mono); font-size:22px; font-weight:500; line-height:1.1}
+.tile span{display:block; margin-top:3px; font-size:11.5px; color:var(--ink3)}
+.tile.t-live b{color:var(--live)} .tile.t-dirty b{color:var(--dirty)} .tile.t-ship b{color:var(--ship)}
+
+/* 검색 + 필터 */
+.bar{position:sticky; top:0; z-index:10; margin-top:22px; padding:11px 0 10px;
+  background:linear-gradient(var(--bg) 72%,transparent); display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+#q{flex:1 1 210px; min-width:0; padding:8px 12px; border:1px solid var(--line); border-radius:8px;
+  background:var(--raised); color:var(--ink); font:inherit}
+#q::placeholder{color:var(--ink3)}
+.chip{padding:7px 12px; border:1px solid var(--line); border-radius:99px; background:var(--surface);
+  color:var(--ink2); font:inherit; font-size:12.5px; cursor:pointer; white-space:nowrap}
+.chip:hover{border-color:var(--accent); color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+:root[data-theme="dark"] .chip[aria-pressed="true"], 
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#0d1014}}
+
+/* 최근성 밴드 — 시간 간격 자체가 정보 */
+.band{margin-top:26px}
+.band > h2{margin:0 0 2px; font-family:var(--mono); font-size:11px; font-weight:500;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--ink3);
+  display:flex; gap:9px; align-items:baseline}
+.band > h2 i{flex:1; height:1px; background:var(--line); font-style:normal}
+.band > h2 em{font-style:normal; color:var(--ink3)}
+
+.row{display:grid; grid-template-columns:1fr auto; gap:3px 14px; align-items:baseline;
+  padding:13px 12px; border-bottom:1px solid var(--line-soft); border-left:2px solid transparent}
+.row:hover{background:var(--surface)}
+.row.is-live{border-left-color:var(--live)}
+.row .top{display:flex; flex-wrap:wrap; gap:8px; align-items:baseline; min-width:0}
+.row .nm{font-weight:500; font-size:15px}
+.row .kd{font-family:var(--mono); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink3); border:1px solid var(--line); border-radius:4px; padding:1px 5px}
+.row .st{font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; border-radius:4px; padding:1px 6px}
+.st.s-live{background:var(--live-soft); color:var(--live)}
+.st.s-dirty{background:var(--dirty-soft); color:var(--dirty)}
+.row .meta{grid-column:1; font-family:var(--mono); font-size:11px; color:var(--ink3);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.row .ds{grid-column:1; color:var(--ink2); font-size:12.5px}
+.row .acts{grid-row:1/3; grid-column:2; display:flex; gap:6px; align-self:center; flex-wrap:wrap; justify-content:flex-end}
+.act{padding:5px 9px; border:1px solid var(--line); border-radius:7px; background:var(--raised);
+  color:var(--ink2); font-family:var(--mono); font-size:11px; text-decoration:none; cursor:pointer; white-space:nowrap}
+.act:hover{border-color:var(--accent); color:var(--accent)}
+.act.go{border-color:var(--live); color:var(--live)}
+
+/* 링크 섹션 */
+.links{margin-top:34px; padding-top:22px; border-top:1px solid var(--line)}
+.links h2{margin:0 0 12px; font-size:16px; font-weight:700}
+.lgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:8px}
+.card{display:flex; gap:9px; align-items:flex-start; padding:11px 12px; border:1px solid var(--line);
+  border-radius:9px; background:var(--surface); color:var(--ink); text-decoration:none}
+.card:hover{border-color:var(--accent); background:var(--raised); box-shadow:var(--shadow)}
+.card .ico{font-size:17px; line-height:1.2; flex:none}
+.card b{display:block; font-weight:500; font-size:13px; line-height:1.35}
+.card span{display:block; margin-top:2px; font-family:var(--mono); font-size:10.5px; color:var(--ink3)}
+.note{margin:18px 0 0; padding:10px 13px; border:1px solid var(--dirty); border-left-width:3px;
+  border-radius:7px; background:var(--dirty-soft); color:var(--ink2); font-size:12.5px}
+.note b{color:var(--ink); font-weight:500}
+.act.dead{opacity:.45; cursor:not-allowed}
+.dep{display:grid; grid-template-columns:auto 1fr auto; gap:4px 11px; align-items:baseline;
+  padding:13px 14px; border:1px solid var(--line); border-radius:10px; background:var(--surface);
+  color:var(--ink); text-decoration:none}
+.dep:hover{border-color:var(--accent); background:var(--raised); box-shadow:var(--shadow)}
+.dep.down{opacity:.6}
+.dep.down:hover{border-color:var(--line)}
+.dep .dot{width:8px; height:8px; border-radius:50%; background:var(--live); align-self:center}
+.dep.down .dot{background:var(--ink3)}
+.dep .nm{font-weight:500; font-size:15px}
+.dep .code{font-family:var(--mono); font-size:11px; color:var(--ink3)}
+.dep .u{grid-column:2/4; font-family:var(--mono); font-size:11.5px; color:var(--accent);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.dep .nt{grid-column:2/4; font-size:12.5px; color:var(--ink2)}
+.dep .tag{grid-column:2/4; justify-self:start; margin-top:5px; font-family:var(--mono);
+  font-size:10.5px; padding:1px 6px; border-radius:4px; background:var(--dirty-soft); color:var(--dirty)}
+.depgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(292px,1fr)); gap:9px}
+.unv{display:grid; gap:7px; margin-top:10px}
+.unv li{list-style:none; display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:baseline;
+  padding:9px 12px; border:1px dashed var(--line); border-radius:8px; font-size:12.5px; color:var(--ink2)}
+.unv b{font-weight:500; color:var(--ink); font-size:13px}
+.unv span{font-family:var(--mono); font-size:10.5px; color:var(--ink3)}
+details.local{margin-top:34px; padding-top:22px; border-top:1px solid var(--line)}
+details.local > summary{cursor:pointer; font-size:16px; font-weight:700; list-style:none}
+details.local > summary::-webkit-details-marker{display:none}
+details.local > summary::before{content:"▸ "; color:var(--ink3)}
+details.local[open] > summary::before{content:"▾ "}
+details.local > summary em{font-style:normal; font-weight:400; font-size:12.5px; color:var(--ink3); margin-left:8px}
+.empty{padding:28px 12px; text-align:center; color:var(--ink3); font-size:13px}
+footer{margin-top:34px; padding-top:16px; border-top:1px solid var(--line-soft);
+  font-family:var(--mono); font-size:11px; color:var(--ink3); line-height:1.7}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:620px){
+  .row{grid-template-columns:1fr}
+  .row .acts{grid-row:auto; grid-column:1; justify-content:flex-start; margin-top:7px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>내가 올린 것들</h1>
+  <p class="sub" id="sub">—</p>
+
+  <p class="note" id="remote-note" hidden>원격에서 열었습니다. <b>localhost 링크는 이 맥에서만 열립니다</b> — 실행 중 표시는 마지막 빌드 시점 기준입니다.</p>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section class="links" style="margin-top:26px; padding-top:0; border-top:0">
+    <h2>도메인에 올라간 서비스</h2>
+    <div class="depgrid" id="deploys"></div>
+  </section>
+
+  <section class="links" id="unv-sec" hidden>
+    <h2>배포 흔적은 있는데 URL 확인 불가</h2>
+    <ul class="unv" id="unverified"></ul>
+  </section>
+
+  <section class="links">
+    <h2>문서 · 아티팩트 <span id="art-n" class="code"></span></h2>
+    <div class="lgrid" id="arts"></div>
+  </section>
+
+  <details class="local">
+    <summary>로컬 프로젝트 <em id="loc-n"></em></summary>
+
+    <p class="note" id="remote-note" hidden>원격에서 열었습니다. <b>localhost 링크는 이 맥에서만 열립니다</b> — 실행 중 표시는 마지막 빌드 시점 기준입니다.</p>
+
+    <div class="bar">
+      <input id="q" type="search" placeholder="이름 · 설명 · 경로 검색  ( / )" autocomplete="off">
+      <button class="chip" id="f-live" aria-pressed="false">실행 중</button>
+      <button class="chip" id="f-dirty" aria-pressed="false">미커밋</button>
+      <button class="chip" id="f-git" aria-pressed="false">git</button>
+      <button class="chip" id="f-clear">전체</button>
+    </div>
+
+    <div id="list"></div>
+
+    <section class="links" id="orphan-sec" hidden>
+      <h2>떠 있지만 프로젝트 미확인</h2>
+      <div class="lgrid" id="orphans"></div>
+    </section>
+  </details>
+
+  <footer id="foot"></footer>
+</div>
+
+<script id="data" type="application/json">{"generated": "2026-09-14T17:12+09:00", "projects": [], "artifacts": [], "deploys": [{"name": "I_AM_ML_Engineer", "url": "https://workdd.github.io/I_AM_ML_Engineer/", "host": "GitHub Pages", "note": "ML 학습 기록", "mine": true, "code": 200, "ok": true}, {"name": "book-radio", "url": "https://workdd.github.io/book-radio/", "host": "GitHub Pages", "note": "모부신 오디오 6부작 플레이어", "mine": true, "code": 200, "ok": true}, {"name": "graphrag-inspector", "url": "https://workdd.github.io/graphrag-inspector/", "host": "GitHub Pages", "note": "GraphRAG 인덱스 검사 도구", "mine": true, "code": 200, "ok": true}, {"name": "shadow-drill", "url": "https://workdd.github.io/shadow-drill/", "host": "GitHub Pages", "note": "일본어·영어 섀도잉 드릴 — 12장면 144문장", "mine": true, "code": 200, "ok": true}, {"name": "gto-drill-app", "url": "https://workdd.github.io/gto-drill-app/", "host": "GitHub Pages", "note": "포커 프리플랍 드릴", "mine": true, "code": 404, "ok": false}], "orphan": [], "unverified": [], "public": true}</script>
+<script>
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const DAY = 864e5;
+
+const BANDS = [
+  ["오늘",          0,   1],
+  ["최근 7일",      1,   7],
+  ["최근 30일",     7,  30],
+  ["최근 90일",    30,  90],
+  ["90일 이상",    90, 1e6],
+];
+
+let filt = {live:false, dirty:false, git:false, q:""};
+
+/* file:// 이나 localhost 에서 열렸을 때만 포트 핑이 의미가 있다.
+   Cloudflare 로 배포된 사본에서는 항상 실패하므로 굽힌 상태를 그대로 보여준다. */
+const LOCAL = location.protocol === "file:" ||
+              ["localhost", "127.0.0.1", "[::1]", ""].includes(location.hostname);
+
+function age(p){
+  if (!p.last) return null;
+  return (Date.now() - new Date(p.last).getTime()) / DAY;
+}
+function ago(p){
+  const a = age(p);
+  if (a === null) return "커밋 없음";
+  if (a < 1) return "오늘";
+  if (a < 30) return `${Math.floor(a)}일 전`;
+  if (a < 365) return `${Math.floor(a/30)}개월 전`;
+  return `${(a/365).toFixed(1)}년 전`;
+}
+
+function match(p){
+  if (filt.live && !(p.up || []).length) return false;
+  if (filt.dirty && !p.dirty) return false;
+  if (filt.git && !p.git) return false;
+  if (filt.q){
+    const hay = (p.name + " " + p.desc + " " + p.path + " " + p.kind + " " + (p.subject||"")).toLowerCase();
+    if (!hay.includes(filt.q)) return false;
+  }
+  return true;
+}
+
+function rowHTML(p){
+  const up = (p.up || []);
+  const acts = [];
+  up.forEach(n => acts.push(LOCAL
+    ? `<a class="act go" href="http://localhost:${n}" target="_blank" rel="noopener">localhost:${n}</a>`
+    : `<span class="act go dead" title="이 맥에서만 열립니다">:${n}</span>`));
+  (p.ports || []).filter(n => !up.includes(n)).forEach(n =>
+    acts.push(`<span class="act dead" title="${LOCAL ? "현재 응답 없음" : "이 맥에서만 열립니다"}">:${n}</span>`));
+  if (p.remote) acts.push(`<a class="act" href="${esc(p.remote)}" target="_blank" rel="noopener">repo</a>`);
+  acts.push(`<button class="act" data-copy="${esc(p.abs)}">경로 복사</button>`);
+
+  const st = [];
+  if (up.length) st.push(`<span class="st s-live">실행 중</span>`);
+  if (p.dirty)   st.push(`<span class="st s-dirty">미커밋</span>`);
+
+  const meta = [p.path, p.branch && `${p.branch}${p.commits ? " · " + p.commits + " commits" : ""}`, ago(p)]
+    .filter(Boolean).join("   ·   ");
+
+  return `<div class="row ${up.length ? "is-live" : ""}">
+    <div class="top"><span class="nm">${esc(p.name)}</span>
+      <span class="kd">${esc(p.kind)}</span>${st.join("")}</div>
+    ${p.desc ? `<div class="ds">${esc(p.desc)}</div>` : ""}
+    <div class="meta">${esc(meta)}</div>
+    <div class="acts">${acts.join("")}</div>
+  </div>`;
+}
+
+function render(){
+  const vis = D.projects.filter(match);
+  const out = [];
+  for (const [label, lo, hi] of BANDS){
+    const g = vis.filter(p => { const a = age(p); return a !== null && a >= lo && a < hi; });
+    if (g.length) out.push(`<section class="band"><h2>${label}<i></i><em>${g.length}</em></h2>${g.map(rowHTML).join("")}</section>`);
+  }
+  const none = vis.filter(p => age(p) === null);
+  if (none.length) out.push(`<section class="band"><h2>커밋 기록 없음<i></i><em>${none.length}</em></h2>${none.map(rowHTML).join("")}</section>`);
+  $("list").innerHTML = out.length ? out.join("") : `<p class="empty">조건에 맞는 프로젝트가 없습니다.</p>`;
+
+  $("list").querySelectorAll("[data-copy]").forEach(b => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); const t = b.textContent; b.textContent = "복사됨";
+          setTimeout(() => b.textContent = t, 1200); } catch { b.textContent = "복사 실패"; }
+  });
+}
+
+function tiles(){
+  const P = D.projects;
+  const n = {
+    all: P.length,
+    live: P.filter(p => (p.up||[]).length).length,
+    dirty: P.filter(p => p.dirty).length,
+    ship: D.deploys.length + D.artifacts.length,
+    week: P.filter(p => { const a = age(p); return a !== null && a < 7; }).length,
+  };
+  const okDeps = D.deploys.filter(d => d.ok).length;
+  const tmp = D.deploys.filter(d => d.ok && d.temp).length;
+  $("tiles").innerHTML = `
+    <div class="tile t-live"><b>${okDeps}</b><span>살아 있는 배포</span></div>
+    <div class="tile t-dirty"><b>${D.deploys.length - okDeps}</b><span>죽은 링크</span></div>
+    <div class="tile"><b>${(D.unverified||[]).length}</b><span>확인 불가</span></div>
+    <div class="tile t-ship"><b>${D.artifacts.length}</b><span>아티팩트</span></div>
+    <div class="tile"><b>${n.all}</b><span>로컬 프로젝트</span></div>`;
+  if (tmp) $("tiles").insertAdjacentHTML("beforeend",
+    `<div class="tile t-dirty"><b>${tmp}</b><span>임시 계정 (만료 예정)</span></div>`);
+}
+
+function orphans(){
+  const o = D.orphan || [];
+  if (!o.length) return;
+  $("orphan-sec").hidden = false;
+  $("orphans").innerHTML = o.map(x =>
+    `<a class="card" href="http://localhost:${x.port}" target="_blank" rel="noopener">
+      <span class="ico">\u26a1</span><span><b>localhost:${x.port}</b><span>${esc(x.proc)}</span></span></a>`).join("");
+}
+
+function links(){
+  $("deploys").innerHTML = D.deploys.length ? D.deploys.map(d => {
+    const tag = d.temp ? `<span class="tag">임시 계정 · 만료 예정</span>` : "";
+    const inner = `<span class="dot"></span>
+      <span class="nm">${esc(d.name)}</span>
+      <span class="code">${d.ok ? esc(d.host) : "HTTP " + (d.code || "응답 없음")}</span>
+      <span class="u">${esc(d.url.replace(/^https?:\/\//, ""))}</span>
+      ${d.note ? `<span class="nt">${esc(d.note)}</span>` : ""}${tag}`;
+    return d.ok
+      ? `<a class="dep" href="${esc(d.url)}" target="_blank" rel="noopener">${inner}</a>`
+      : `<div class="dep down" title="응답하지 않습니다">${inner}</div>`;
+  }).join("") : `<p class="empty">확인된 배포가 없습니다.</p>`;
+
+  const u = D.unverified || [];
+  if (u.length){
+    $("unv-sec").hidden = false;
+    $("unverified").innerHTML = u.map(x =>
+      `<li><span class="ico">?</span><span><b>${esc(x.name)}</b> <span>${esc(x.host)}</span><br>${esc(x.reason)}</span></li>`).join("");
+  }
+  $("art-n").textContent = `${D.artifacts.length}`;
+  $("loc-n").textContent = `${D.projects.length}개 · 클릭해서 펼치기`;
+
+  // 공개 배포본은 배포된 서비스만 보여준다
+  if (D.public){
+    document.querySelectorAll(".links").forEach(s => {
+      if (s.id !== "unv-sec" && !s.querySelector("#deploys")) s.hidden = true;
+    });
+    const loc = document.querySelector("details.local"); if (loc) loc.hidden = true;
+    $("unv-sec").hidden = true;
+    $("tiles").innerHTML = `
+      <div class="tile t-live"><b>${D.deploys.filter(d=>d.ok).length}</b><span>살아 있는 서비스</span></div>
+      <div class="tile t-dirty"><b>${D.deploys.filter(d=>!d.ok).length}</b><span>죽은 링크</span></div>`;
+    $("sub").textContent = `${D.generated} 기준 · 배포된 것만`;
+  }
+  $("arts").innerHTML = D.artifacts.map(a =>
+    `<a class="card" href="${esc(a.u)}" target="_blank" rel="noopener"><span class="ico">${esc(a.i || "📄")}</span>
+      <span><b>${esc(a.t)}</b><span>${esc(a.d || "")}</span></span></a>`).join("");
+}
+
+/* 빌드 시점 상태는 굽혀 있으니 로드 때 다시 확인한다.
+   file:// 에서 localhost 로 가는 no-cors 요청은 서버가 응답하면 resolve, 죽어 있으면 reject 된다. */
+async function reping(){
+  if (!LOCAL){
+    $("remote-note").hidden = false;
+    $("sub").textContent = `${D.generated} 빌드 기준 (원격 열람)`;
+    return;
+  }
+  const all = [...new Set(D.projects.flatMap(p => p.ports || []))];
+  if (!all.length) return;
+  const alive = new Set();
+  await Promise.all(all.map(async n => {
+    const c = new AbortController(); const t = setTimeout(() => c.abort(), 1400);
+    try { await fetch(`http://localhost:${n}/`, {mode:"no-cors", signal:c.signal, cache:"no-store"}); alive.add(n); }
+    catch {} finally { clearTimeout(t); }
+  }));
+  let changed = false;
+  for (const p of D.projects){
+    const next = (p.ports || []).filter(n => alive.has(n));
+    if (next.join() !== (p.up || []).join()){ p.up = next; changed = true; }
+  }
+  if (changed){ tiles(); render(); }
+  $("sub").textContent = `${D.generated} 기준 · 포트 재확인 완료`;
+}
+
+$("q").oninput = e => { filt.q = e.target.value.trim().toLowerCase(); render(); };
+for (const k of ["live","dirty","git"]) $("f-"+k).onclick = e => {
+  filt[k] = !filt[k]; e.currentTarget.setAttribute("aria-pressed", String(filt[k])); render();
+};
+$("f-clear").onclick = () => {
+  filt = {live:false, dirty:false, git:false, q:""}; $("q").value = "";
+  ["live","dirty","git"].forEach(k => $("f-"+k).setAttribute("aria-pressed","false")); render();
+};
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && e.target.tagName !== "INPUT"){ e.preventDefault(); $("q").focus(); }
+  if (e.key === "Escape" && e.target === $("q")){ $("q").value = ""; filt.q = ""; render(); $("q").blur(); }
+});
+
+$("sub").textContent = `${D.generated} 기준`;
+$("foot").innerHTML = LOCAL
+  ? `python3 ~/dev-dashboard/build.py 로 갱신 · localhost 링크가 그대로 열립니다`
+  : `python3 ~/dev-dashboard/build.py &amp;&amp; cd ~/dev-dashboard/deploy &amp;&amp; npx wrangler deploy 로 갱신`;
+tiles(); links(); orphans(); render(); reping();
+</script>
+</body>
+</html>
